@@ -4,9 +4,6 @@ name: UtiliKit web build
 # signing or publishing. Manual only.
 on:
   workflow_dispatch:
-  push:
-    branches: [utilikit]
-    paths: [".github/workflows/utilikit-web.yml"]
 
 permissions:
   contents: read
