@@ -1,0 +1,104 @@
+name: UtiliKit web build
+
+# Reproduces upstream's release `web` job (craft-common-actions release.yml) without secrets,
+# signing or publishing. Manual only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Web (wasm)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      RUST_BACKTRACE: 1
+      TRUNK_VERSION: "0.21.14"
+      TRUNK_SHA256: "f2b4680cd239693a646a2795e4633c625328d7b2a044fbe749fa3a2fe9e7036b"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust (latest stable, wasm32 target), as upstream releases do
+        run: |
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+          rustc --version
+
+      - name: Install Trunk
+        run: |
+          url="https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz"
+          curl --proto '=https' --proto-redir =https -fsSL -o "$RUNNER_TEMP/trunk.tar.gz" "$url"
+          echo "$TRUNK_SHA256  $RUNNER_TEMP/trunk.tar.gz" | sha256sum -c -
+          mkdir -p "$HOME/.cargo/bin"
+          tar -xz -C "$HOME/.cargo/bin" -f "$RUNNER_TEMP/trunk.tar.gz" trunk
+          trunk --version
+
+      - name: Check out craft-fonts at upstream's pinned revision
+        # The same pin release.yml passes (craft-fonts-ref); the web build fetches some faces
+        # from fonts/ beside the wasm and embeds the rest.
+        run: |
+          rev=b076417b5880bd4154bd22f00695b1d28c6bea83
+          mkdir craft-fonts
+          git -C craft-fonts init -q
+          git -C craft-fonts fetch -q --depth 1 https://github.com/storytold/craft-fonts.git "$rev"
+          git -C craft-fonts checkout -q FETCH_HEAD
+          test -d craft-fonts/fonts
+          echo "CRAFT_FONTS_DIR=$GITHUB_WORKSPACE/craft-fonts" >> "$GITHUB_ENV"
+          echo "CRAFT_FONTS_REQUIRED=1" >> "$GITHUB_ENV"
+
+      - name: Drop upstream brand rows from the translations (UtiliKit build)
+        # Every catalog row that names VectorCraft, ArtCraft or Discord is removed (and the comment lines), so those
+        # strings fall back to the (rebranded) English in the source.
+        run: |
+          set -euo pipefail
+          export LC_ALL=C
+          dropped=0
+          for f in crates/ui-egui/src/i18n/*.tsv; do
+            before=$(wc -l < "$f")
+            awk -F'	' '/^#/ { next } NF < 2 { print; next }
+              /VectorCraft|ArtCraft|Discord|artcraft|discord/ { next }
+              { print }' "$f" > "$f.tmp"
+            mv "$f.tmp" "$f"
+            dropped=$((dropped + before - $(wc -l < "$f")))
+          done
+          echo "dropped $dropped brand rows"
+          if cat crates/ui-egui/src/i18n/*.tsv | grep -qE 'VectorCraft|ArtCraft|Discord'; then echo "brand rows left"; exit 1; fi
+
+      - name: Build and zip
+        run: |
+          export VECTORCRAFT_BUILD_SHA="$GITHUB_SHA"
+          export VECTORCRAFT_BUILD_DATE="$(date -u +%Y-%m-%d)"
+          packaging/web/package.sh
+
+      - name: Assemble the site
+        run: |
+          set -euo pipefail
+          site=$(echo target/web-package/vectorcraft-web-*)
+          test -f "$site/index.html"
+          rm -rf site-out
+          mkdir -p site-out
+          # UtiliKit build: ship the licences, notices and our change list; drop upstream's
+          # README and hosting notes (ArtCraft branding, not needed on the site).
+          cp UTILIKIT-CHANGES.txt ATTRIBUTION.md "$site/"
+          rm -f "$site/README.md" "$site/HOSTING.md"
+          for f in LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md UTILIKIT-CHANGES.txt; do test -f "$site/$f"; done
+          cp -R "$site/." site-out/
+          (cd site-out && zip -qr9 "$GITHUB_WORKSPACE/dist/vectorcraft-web-fixed.zip" .)
+          du -sh site-out; ls -l site-out | head -40; find site-out -type f -size +5M | xargs ls -l
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site
+          path: site-out
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site-zip
+          path: dist/vectorcraft-web-fixed.zip
+          if-no-files-found: error

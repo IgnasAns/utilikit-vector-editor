@@ -740,7 +740,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "",
         "{} opens the Save PDF dialog; with params = document.exportPdf options written to path (asked when missing; viewAfterSaving opens the file) → {path, bytes, warnings}",
     ),
-    ("help.about", "About VectorCraft", "", "{}"),
+    ("help.about", "About UtiliKit Vector Editor", "", "{}"),
     ("help.checkForUpdates", "Check for Updates…", "", "{}"),
     ("help.commandPalette", "Search Commands…", "Cmd+Shift+/", "{}"),
     (
@@ -749,7 +749,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "",
         "{} open the Safe Mode dialog (dialog `safeMode`): whether VectorCraft is in Safe Mode, and the disabled plug-ins, each with Enable on Re-launch (engine: plugin.setEnabled). Closing it leaves Safe Mode as it is; Safe Mode is chosen at launch (--safe-mode, or the choice after a launch that stopped while a plug-in was loading, dialog `pluginStopped`)",
     ),
-    ("app.quit", "Quit VectorCraft", "Cmd+Q", "{}"),
+    ("app.quit", "Quit UtiliKit Vector Editor", "Cmd+Q", "{}"),
     (
         "ui.swatchOptions",
         "Swatch Options…",

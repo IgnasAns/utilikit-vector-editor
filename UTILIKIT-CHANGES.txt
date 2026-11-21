@@ -1,0 +1,25 @@
+UtiliKit Vector Editor: changes made to VectorCraft
+===================================================
+
+UtiliKit Vector Editor is based on VectorCraft (https://github.com/storytold/vectorcraft), an
+open-source project by the ArtCraft team and contributors, used under the MIT and Apache-2.0
+licences (LICENSE-MIT, LICENSE-APACHE, NOTICE, ATTRIBUTION.md). This is a modified version. It is
+not affiliated with or endorsed by the ArtCraft team.
+
+Base: VectorCraft v0.24.1. Changes in this version (notice of modification, Apache-2.0 section 4b):
+
+- Product name shown to users is "UtiliKit Vector Editor": the browser page title, loading and error
+  text, title bar, Home screen, About dialog, Help menu, and status/error messages that named the
+  app. Crate names, internal identifiers, the CLI and the .vectorcraft file format are unchanged.
+- The ArtCraft name, marks and links were removed from the interface. The title-bar, About and
+  Home mark is the UtiliKit mark (assets/utilikit/, our own artwork, not covered by the VectorCraft
+  licence), also used as the web page icon.
+- Links: the Discord button and Help entries, getartcraft.com and the VectorCraft Help item were
+  removed. "Website" opens https://utilikit.eu/vector-editor/, "More free tools" opens
+  https://utilikit.eu/, "Report an Issue" opens https://utilikit.eu/vector-editor/#feedback, and one
+  link ("Open-source project (VectorCraft)") opens the upstream repository.
+- The About dialog states that this is a modified version based on VectorCraft.
+- Build (.github/workflows/utilikit-web.yml): translation rows that name VectorCraft, ArtCraft or
+  Discord are dropped from the interface catalogs before the build, so those strings show in
+  (rebranded) English; the web site ships this file with the licences and notices, without
+  upstream's README.
